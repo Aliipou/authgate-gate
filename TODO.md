@@ -41,11 +41,45 @@ runtime. So:
 (7) Incident log + rollback
 ```
 
-### The critical missing piece: Runtime capability scoping
-Not before (static policy), not after (audit) — **mid-execution**. *"Everything is a capability,
-including reasoning."* Constrain the **action space before the agent even reasons** into it, rather
-than only denying the output. This is the **Runtime Adversarial Control Plane** you don't yet have
-(FDK + AuthGate + boundary-guard cover semantic/static, none cover mid-run runtime scoping).
+### The critical missing piece: Layer #3 — Runtime Control & Drift Layer (TEMPORAL)
+The deepest gap. FDK + AuthGate cover **decision** + **execution**; neither covers **behavior over
+time**. You're building a *decision system*; the missing layer makes it a *control system*.
+
+```
+   FDK            AuthGate          Runtime Control Layer  ← missing
+   "is it         "may it           "is the system's BEHAVIOR over time
+    legitimate?"   execute now?"     still valid?"
+   static          local/per-call    dynamic / temporal
+```
+
+What it adds (none of the other layers can see this):
+1. **Drift detection** — after N steps, is the trajectory still inside the allowed space? Catches
+   goal-bypass, *soft* policy bypass, reward hacking — each step legal, the *path* illegitimate.
+2. **Multi-step consequence tracking** — FDK sees one action; this sees step 10. Without it you
+   never see the slow constraint-bypass that's built from individually-allowed steps.
+3. **Mid-execution capability scoping** — *"everything is a capability, including reasoning."*
+   Constrain the action space *before the agent reasons into it*, not just deny the output.
+
+This is real, named work — not philosophy: **runtime verification · control barrier functions
+(robotics) · adversarial-ML monitoring · agent trajectory supervision · OS safety kernel**. In OS
+terms: FDK = law, AuthGate = syscall permission, **Runtime Layer = kernel watchdog + anomaly
+detection** (stack slots 6–7).
+
+**Build-order discipline:** this is the *destination*, not the next step. It consumes the Action
+Packet stream — so the **Action Packet ABI (decided next step) is exactly step 1 toward it.** Don't
+build the drift layer before packets flow.
+
+### Honest coverage with the 3rd layer (numbers are non-linear — adversarial)
+| Layer stack | system-behavior safety | reliable control of dangerous systems |
+|---|---|---|
+| FDK only | 20–40% | ~30–40% |
+| FDK + AuthGate | 20–40% | ~45–60% |
+| + Runtime Layer | 60–80% | ~65–80% |
+
+Never 100% — the system is adversarial and not fully closeable. **Even with all 3 layers, still
+unsolved:** semantic intent-hijacking · unknown-unknowns / emergent behavior · multi-agent
+coordination attacks · specification gaming (bypass without formally violating a rule). No current
+architecture (Google/OpenAI/AWS included) solves these either — say so, don't oversell.
 
 ### Target decision: **AI agents in cloud first** (not robotics)
 The runtime/AuthGate design forks hard between cloud-AI and physical/robotics. Pick **cloud AI**:
@@ -95,6 +129,28 @@ sandbox / "real OS kernel". **Do #1 now.** Why:
 - **Defer #3 (sandbox):** it's the real confinement moat, but high-effort + env-blocked here
   (Linux/WASM; partial sandbox already exists in `authgate-kernel`). Do it when there's a Linux
   env *and* a user. Don't let "design the real OS kernel" pull v1 into scope creep.
+
+## Two more layers/rules the feedback converged on (record, don't build yet)
+
+**Missing Layer #0 — World Model / ground-truth / observability** (this *is* stack-slot 0).
+FDK decides on *a story about the world*, not the world. Its inputs — consent, coercion, ownership
+— are assumed complete; in reality they're ambiguous, multi-layered (data/model/inference), and
+coercion is often *unobservable*. Without observable, machine-checkable definitions, FDK is an
+**interpretation layer, not a deterministic decision.** The 20% that decides "real system" vs
+"beautiful philosophy-engineering" = **world-model + observability + semantics grounding.** Hardest
+layer; don't fake it. (Honest: no one — Google/OpenAI/AWS — has solved this either.)
+
+**Hard rule — never merge FDK and AuthGate** (God-object anti-pattern). Merging legitimacy reasoning
++ capability check + crypto enforcement → undebuggable, multiplied attack surface, and the worst
+outcome: *ambiguity leaks into the enforcement layer*. Keep them separate across the JSON
+`PolicyDecision` seam, no shared code. (Same as the kernel invariant: **AuthGate depends on
+nothing**; no philosophy in enforcement.)
+
+**AuthGate scope honesty (put in README):** AuthGate is **necessary, not sufficient.** It stops a
+*dangerous action*; it does **not** stop a *wrong-but-allowed decision* — and the agent problem is
+exactly the second. Full conceptual stack: Goal-formation (research/unknown) → FDK (legitimacy
+filter) → Planner → AuthGate (capability enforcement) → Execution → Ledger/audit/crypto. AuthGate is
+the **lowest hard safety boundary before execution** — own that, claim no more.
 
 ## Now (v1 — make the wedge undeniable)
 
