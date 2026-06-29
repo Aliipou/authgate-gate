@@ -1,0 +1,20 @@
+{
+  "_comment": "One philosophy, multiple isolated systems. Boundaries are enforced, not hoped for. Layers are defined by the top-level import names that belong to them; a forbidden edge means code in 'from' must never import code in 'to'.",
+  "layers": {
+    "philosophy": ["philosophy", "theory"],
+    "authgate": ["authgate"],
+    "fdk": ["fdk"],
+    "robotics": ["robot", "robotics", "authrobo"],
+    "quantum_research": ["quantum", "qkd", "qfl"],
+    "observability": ["observability", "analytics"]
+  },
+  "forbidden": [
+    {"from": "robotics", "to": "quantum_research", "why": "no quantum on a real-time, safety-critical control path (non-deterministic; measurement destroys state)"},
+    {"from": "authgate", "to": "quantum_research", "why": "production capability core stays classical + PQC; quantum is T3 research only"},
+    {"from": "fdk", "to": "quantum_research", "why": "the autonomy gate is deterministic; quantum stays in the research sandbox"},
+    {"from": "authgate", "to": "observability", "why": "the control plane must not depend on the observability plane (dependency is one-way)"},
+    {"from": "fdk", "to": "observability", "why": "decisions never depend on analytics — FDK observes, it never controls"},
+    {"from": "robotics", "to": "observability", "why": "the safety path must not depend on analytics"},
+    {"from": "philosophy", "to": "*", "why": "the theory layer is pure: it must import no implementation"}
+  ]
+}

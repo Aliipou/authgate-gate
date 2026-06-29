@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "default": "deny",
+  "purpose_bindings": {
+    "customer_support": ["support_reply", "account_recovery"],
+    "payments": ["fulfillment", "fraud_check"],
+    "medical": ["care"],
+    "marketing_optin": ["marketing", "support_reply"]
+  },
+  "redactions": [
+    {
+      "action_purpose": "support_reply",
+      "redact_fields": ["ssn", "card_number"]
+    }
+  ]
+}

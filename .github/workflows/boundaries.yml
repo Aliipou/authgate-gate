@@ -1,0 +1,17 @@
+name: boundaries
+
+# Architecture boundaries are a CI gate. A PR that introduces a forbidden
+# cross-layer import (e.g. robotics -> quantum_research) fails the build.
+on: [push, pull_request]
+
+jobs:
+  enforce-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Enforce architecture boundaries
+        # Check real source, not the deliberately-violating demo under boundaries/example.
+        run: python boundaries/check_boundaries.py authgate --policy boundaries/policy.json
