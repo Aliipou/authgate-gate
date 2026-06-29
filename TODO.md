@@ -152,6 +152,27 @@ exactly the second. Full conceptual stack: Goal-formation (research/unknown) →
 filter) → Planner → AuthGate (capability enforcement) → Execution → Ledger/audit/crypto. AuthGate is
 the **lowest hard safety boundary before execution** — own that, claim no more.
 
+## BUILD STATUS (2026-06-30) — governance-OS skeleton, parallel team
+
+Goal: drive *modeled* attacks to contained (red-team bypasses → 0) with fail-closed
+defense-in-depth; honest that semantic/unknown-unknown gaps never reach 100%.
+
+- [x] **ABI contract** (`action.py`, `normalize.py`) — Action Packet v1, RiskVector,
+      Layer/DomainAdapter protocols, trust-boundary token normalization. Committed `20584cc`.
+- [~] **Capability layer** (`capability.py`) — default-deny actor→capability, wildcard admin,
+      fail-closed. *(agent building)*
+- [~] **Runtime/Drift layer** (`runtime.py`, Layer #3 temporal) — per-session steps/rate/budget,
+      replay-nonce, cross-step taint laundering, fleet kill-switch. *(agent building)*
+- [~] **Domain adapters** (`adapter.py`) — AI (reference) + Finance + Quantum-job, proving
+      "one logic, many worlds". *(agent building)*
+- [~] **Tamper-evident audit** (`audit_chain.py`) — hash-chained JSONL + `verify()`. *(agent building)*
+- [ ] **Compose `ControlledGate`** — capability → purpose → runtime, first DENY wins, TRANSFORM
+      carries forward; audit every decision with the deciding layer. *(me, after layers land)*
+- [ ] **Brutal red team** (`redteam/red_team.py`) — N adversaries × categories (injection,
+      purpose-laundering, capability-escalation, tool-chaining, runaway, budget-exhaustion,
+      replay, unicode/zero-width, kill-switch-bypass, audit-tamper). Any escape = hard fail.
+- [ ] **Iterate** red-team → fix bypasses → rerun until 0. Then commit + push.
+
 ## Now (v1 — make the wedge undeniable)
 
 - [ ] **Positioning README pass.** Add one-line pitch + a competitor table
