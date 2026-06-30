@@ -159,19 +159,24 @@ defense-in-depth; honest that semantic/unknown-unknown gaps never reach 100%.
 
 - [x] **ABI contract** (`action.py`, `normalize.py`) — Action Packet v1, RiskVector,
       Layer/DomainAdapter protocols, trust-boundary token normalization. Committed `20584cc`.
-- [~] **Capability layer** (`capability.py`) — default-deny actor→capability, wildcard admin,
-      fail-closed. *(agent building)*
-- [~] **Runtime/Drift layer** (`runtime.py`, Layer #3 temporal) — per-session steps/rate/budget,
-      replay-nonce, cross-step taint laundering, fleet kill-switch. *(agent building)*
-- [~] **Domain adapters** (`adapter.py`) — AI (reference) + Finance + Quantum-job, proving
-      "one logic, many worlds". *(agent building)*
-- [~] **Tamper-evident audit** (`audit_chain.py`) — hash-chained JSONL + `verify()`. *(agent building)*
-- [ ] **Compose `ControlledGate`** — capability → purpose → runtime, first DENY wins, TRANSFORM
-      carries forward; audit every decision with the deciding layer. *(me, after layers land)*
-- [ ] **Brutal red team** (`redteam/red_team.py`) — N adversaries × categories (injection,
-      purpose-laundering, capability-escalation, tool-chaining, runaway, budget-exhaustion,
-      replay, unicode/zero-width, kill-switch-bypass, audit-tamper). Any escape = hard fail.
-- [ ] **Iterate** red-team → fix bypasses → rerun until 0. Then commit + push.
+- [x] **Capability layer** (`capability.py`) — default-deny actor→capability, wildcard admin,
+      fail-closed. 14 tests.
+- [x] **Runtime/Drift layer** (`runtime.py`, Layer #3 temporal) — per-session steps/rate/budget,
+      replay-nonce, cross-step taint laundering, process-wide kill-switch. 12 tests + budget-integrity fix.
+- [x] **Domain adapters** (`adapter.py`) — AI (reference) + Finance + Quantum-job, "one logic,
+      many worlds". 23 tests.
+- [x] **Tamper-evident audit** (`audit_chain.py`) — hash-chained JSONL + `verify()`. 11 tests.
+- [x] **Compose `ControlledGate`** — capability → purpose → runtime, first DENY wins, TRANSFORM
+      carries forward, fail-closed boundary; audit every decision. 10 composition tests + flagship demo.
+- [x] **Brutal red team** — `redteam/red_team_components.py` (per-component, 58 probes, 0 escapes)
+      + `redteam/red_team.py` (whole-system, 16 categories, seeded, env-tunable).
+- [x] **Iterate** — red team found 2 real vuln classes (budget integrity: neg/NaN/inf; fail-closed
+      on non-Action) → fixed + regression-guarded.
+- [x] **Infra-ready** — pyproject (zero runtime deps, `py.typed`), CI (ruff+mypy+pytest+boundaries+
+      both red teams), SECURITY.md, LICENSE (PolyForm NC), honest README.
+- [x] **Critical research** — `CRITICAL_RESEARCH.md` falsification-first gap analysis (G0–G7).
+- [ ] **Deeper gaps (documented, deferred):** ground-truth/label honesty (G2), sound taint (G3),
+      execution confinement (G4), external audit anchoring (G5), cross-process control plane (G6).
 
 ## Now (v1 — make the wedge undeniable)
 

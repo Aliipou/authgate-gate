@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "authgate-gate"
+version = "0.1.0"
+description = "A deterministic, fail-closed governance gate for autonomous-agent tool calls: capability + purpose-binding + runtime-drift enforcement with a tamper-evident audit chain."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Ali Pourrahim" }]
+keywords = [
+    "authorization", "policy-enforcement", "ai-agents", "agent-security",
+    "capability-security", "governance", "pdp", "pep", "mcp",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
+]
+# The library itself is pure standard library — zero runtime dependencies by design.
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/Aliipou/authgate-gate"
+
+[project.optional-dependencies]
+dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["authgate"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# A small, high-signal rule set: pyflakes, pycodestyle, isort, bugbear, pyupgrade.
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests and red-team harnesses favor long, descriptive assert messages and
+# deliberately-malformed literals over strict line length.
+"tests/**" = ["E501"]
+"redteam/**" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

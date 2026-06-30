@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +21,7 @@ class AuditLog:
 
     def record(self, intent: Intent, decision: Decision) -> dict[str, Any]:
         entry = {
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "actor": intent.actor,
             "tool": intent.tool,
             "action_purpose": intent.action_purpose,

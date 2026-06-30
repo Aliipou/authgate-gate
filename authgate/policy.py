@@ -3,14 +3,19 @@ from __future__ import annotations
 import dataclasses
 import json
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from .action import Action
 from .intent import Intent
 
+# The purpose policy reads only the five core fields shared by the legacy
+# `Intent` and the canonical `Action` packet, so it accepts either.
+Packet = Intent | Action
 
-class Verdict(str, Enum):
+
+class Verdict(StrEnum):
     ALLOW = "allow"
     DENY = "deny"
     TRANSFORM = "transform"
@@ -18,11 +23,11 @@ class Verdict(str, Enum):
 
 @dataclass(frozen=True)
 class Decision:
-    """The gate's ruling on a single Intent. Deterministic and explainable."""
+    """The gate's ruling on a single packet. Deterministic and explainable."""
 
     verdict: Verdict
     reason: str
-    transformed: Intent | None = None  # populated only when verdict is TRANSFORM
+    transformed: Packet | None = None  # populated only when verdict is TRANSFORM
 
 
 class PolicyEngine:
@@ -44,10 +49,10 @@ class PolicyEngine:
         self._redactions: list[dict[str, Any]] = policy.get("redactions", [])
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "PolicyEngine":
+    def from_file(cls, path: str | Path) -> PolicyEngine:
         return cls(json.loads(Path(path).read_text(encoding="utf-8")))
 
-    def evaluate(self, intent: Intent) -> Decision:
+    def evaluate(self, intent: Packet) -> Decision:
         # 1. Purpose-binding: data may only be used for purposes it permits.
         for label in intent.data_labels:
             allowed = self._bindings.get(label)

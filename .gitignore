@@ -1,3 +1,16 @@
 __pycache__/
 *.pyc
 .venv/
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Runtime audit output (decision logs are generated, not source)
+audit/*.jsonl

@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -134,7 +134,7 @@ class HashChainedAudit:
         """
         entry: dict[str, Any] = {
             "seq": self._next_seq,
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "actor": action.actor,
             "tool": action.tool,
             "action_purpose": action.action_purpose,

@@ -34,10 +34,10 @@ Stdlib only.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from .action import Action, RiskVector
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -330,7 +330,9 @@ class QuantumJobAdapter:
     def normalize(self, raw: Mapping[str, Any]) -> Action:
         """Map a quantum job request to a canonical Action."""
         if not isinstance(raw, Mapping):
-            raise TypeError(f"QuantumJobAdapter.normalize expects a mapping, got {type(raw).__name__}")
+            raise TypeError(
+                f"QuantumJobAdapter.normalize expects a mapping, got {type(raw).__name__}"
+            )
         payload: dict[str, Any] = {
             "backend": raw.get("backend", ""),
             "shots": raw.get("shots", 0),

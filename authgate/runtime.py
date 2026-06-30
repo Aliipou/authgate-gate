@@ -38,9 +38,10 @@ stdlib only.
 
 from __future__ import annotations
 
+import math
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 from .action import Action
 from .policy import Decision, Verdict
@@ -259,7 +260,24 @@ class RuntimeLayer:
         cost = self._monitor.cost_of(action)
         new_costs = dict(st.costs)
         for key, amount in cost.items():
-            new_costs[key] = new_costs.get(key, 0.0) + float(amount)
+            value = float(amount)
+            # Budget integrity. A non-finite cost (NaN/inf) cannot be compared to
+            # a ceiling (NaN is unordered: every comparison is False), so for a
+            # budgeted key it must fail closed rather than silently slip past.
+            # A negative cost must never be able to "bank headroom" that defeats a
+            # later over-budget call, so it is clamped to zero — a credit cannot
+            # increase an outflow allowance. (Unbudgeted keys can't matter.)
+            if not math.isfinite(value):
+                if key in cfg.budgets:
+                    return Decision(
+                        Verdict.DENY,
+                        f"runtime: non-finite cost {amount!r} for budget '{key}' "
+                        f"in session '{action.session_id}'",
+                    )
+                value = 0.0
+            elif value < 0.0:
+                value = 0.0
+            new_costs[key] = new_costs.get(key, 0.0) + value
         for key, ceiling in cfg.budgets.items():
             if new_costs.get(key, 0.0) > ceiling:
                 return Decision(

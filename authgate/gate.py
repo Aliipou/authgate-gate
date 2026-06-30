@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from .audit import AuditLog
 from .intent import Intent
@@ -46,5 +47,5 @@ class AuthGate:
             # A permitted-but-unknown tool is still a hard failure, not a guess.
             raise KeyError(f"no executor registered for tool '{effective.tool}'")
 
-        output = tool(effective.payload)
+        output = tool(dict(effective.payload))
         return GateResult(executed=True, decision=decision, output=output)

@@ -16,9 +16,10 @@ downstream layer ever compares un-normalized strings.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any, Mapping, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from .normalize import normalize_labels, normalize_token
 
@@ -106,7 +107,7 @@ class Layer(Protocol):
 
     name: str
 
-    def check(self, action: "Action") -> Any:  # -> Decision (avoids import cycle)
+    def check(self, action: Action) -> Any:  # -> Decision (avoids import cycle)
         ...
 
 
@@ -121,7 +122,7 @@ class DomainAdapter(Protocol):
 
     name: str
 
-    def normalize(self, raw: Any) -> "Action": ...
+    def normalize(self, raw: Any) -> Action: ...
     def denormalize(self, result: Any) -> Any: ...
-    def map_capabilities(self, action: "Action") -> tuple[str, ...]: ...
-    def risk_profile(self, action: "Action") -> "RiskVector": ...
+    def map_capabilities(self, action: Action) -> tuple[str, ...]: ...
+    def risk_profile(self, action: Action) -> RiskVector: ...

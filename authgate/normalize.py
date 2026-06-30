@@ -11,7 +11,7 @@ Normalization is idempotent: normalize(normalize(x)) == normalize(x).
 from __future__ import annotations
 
 import unicodedata
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def normalize_token(value: str) -> str:

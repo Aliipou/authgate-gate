@@ -26,7 +26,7 @@ produces a refusal, never an accidental allow.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 from .action import Action
 from .audit_chain import HashChainedAudit
@@ -53,7 +53,23 @@ class ControlledGate:
 
     def enforce(self, action: Action) -> Decision:
         """Rule on a single Action without executing it. Records every layer's
-        decision to the audit log, tagged with the deciding layer."""
+        decision to the audit log, tagged with the deciding layer.
+
+        Fail-closed at the boundary: anything that is not a real ``Action`` is
+        refused before it can touch a layer or the audit log, and any unexpected
+        error inside the pipeline becomes a DENY rather than a crash."""
+        if not isinstance(action, Action):
+            return Decision(
+                Verdict.DENY,
+                f"controlled gate: input is not an Action packet "
+                f"(got {type(action).__name__})",
+            )
+        try:
+            return self._enforce(action)
+        except Exception as exc:  # defense in depth — never crash, never allow.
+            return Decision(Verdict.DENY, f"controlled gate: failing closed ({exc!r})")
+
+    def _enforce(self, action: Action) -> Decision:
         # 1. Capability — cheapest hard boundary; deny here costs nothing downstream.
         cap = self._capability.check(action)
         self._audit.record(action, cap, layer="capability")
@@ -65,7 +81,9 @@ class ControlledGate:
         self._audit.record(action, pol, layer="policy")
         if pol.verdict is Verdict.DENY:
             return pol
-        effective = pol.transformed or action
+        # In this pipeline the policy only ever sees an Action, so a TRANSFORM
+        # carries an Action back; cast keeps the runtime layer's type honest.
+        effective = cast(Action, pol.transformed) if pol.transformed is not None else action
 
         # 3. Runtime / drift — temporal & global; commits state only on ALLOW, so
         #    the order matters: nothing above has consumed budget/steps yet.
@@ -105,9 +123,15 @@ def build_gate(
     """Assemble a production `ControlledGate` from its parts.
 
     Returns the gate and the `RuntimeMonitor` (so an operator keeps a handle on
-    the fleet kill-switch — `monitor.stop()`). Construct one gate per trust
-    domain; share a registry/policy across sessions but keep the monitor's
+    the **process-wide** kill-switch — `monitor.stop()`). Construct one gate per
+    trust domain; share a registry/policy across sessions but keep the monitor's
     per-session state local to the gate.
+
+    Honest scope: the monitor's state (budgets, nonce-sets, kill-switch) lives in
+    this process's memory. Across multiple processes/machines these guarantees do
+    not coordinate — `stop()` halts only this process, and budgets are per-process.
+    A cross-machine control plane needs a shared, consistent store (see
+    `CRITICAL_RESEARCH.md`, gap G6). Don't market this as a multi-host "fleet" stop.
     """
     monitor = RuntimeMonitor(runtime_config or RuntimeConfig())
     gate = ControlledGate(
