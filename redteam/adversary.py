@@ -34,19 +34,22 @@ try:
 except Exception:
     pass
 
+from authgate.action import Action  # noqa: E402
+from authgate.audit_chain import (  # noqa: E402
+    GENESIS_PREV_HASH,
+    HashChainedAudit,
+    _canonical_hash,
+)
+from authgate.capability import CapabilityLayer, CapabilityRegistry  # noqa: E402
+from authgate.controlled_gate import build_gate  # noqa: E402
+from authgate.policy import Verdict  # noqa: E402
+from authgate.runtime import RuntimeConfig, RuntimeLayer, RuntimeMonitor  # noqa: E402
+
 # Provoke thread preemption inside pure-Python critical sections: shrink the GIL
 # switch interval so CPython context-switches far more aggressively than the
 # 5ms default. This does NOT change authgate/ — it only stresses the scheduler
 # the way a busy multi-threaded production host naturally would.
 sys.setswitchinterval(0.000001)
-
-from authgate.action import Action
-from authgate.audit_chain import HashChainedAudit, _canonical_hash, GENESIS_PREV_HASH
-from authgate.capability import CapabilityLayer, CapabilityRegistry
-from authgate.controlled_gate import ControlledGate, build_gate
-from authgate.policy import Decision, PolicyEngine, Verdict
-from authgate.runtime import RuntimeConfig, RuntimeLayer, RuntimeMonitor
-
 
 POLICY_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -125,9 +128,9 @@ def attack_concurrency_budget() -> Result:
         lock = threading.Lock()
         start = threading.Barrier(n_threads)
 
-        def worker(tid: int) -> None:
+        def worker(tid: int, layer=layer, start=start, lock=lock, allowed=allowed) -> None:
             start.wait()
-            for i in range(calls_per_thread):
+            for _ in range(calls_per_thread):
                 a = Action(
                     actor="agent:bot", tool="spend_money", action_purpose="p",
                     payload={"amount": per_call}, session_id="race", nonce="",
@@ -193,9 +196,9 @@ def attack_concurrency_steps() -> Result:
         lock = threading.Lock()
         start = threading.Barrier(n_threads)
 
-        def worker(tid: int) -> None:
+        def worker(tid: int, layer=layer, start=start, lock=lock, allowed=allowed) -> None:
             start.wait()
-            for i in range(calls_per_thread):
+            for _ in range(calls_per_thread):
                 a = Action(actor="agent:bot", tool="t", action_purpose="p",
                            session_id="racesteps", nonce="")
                 d = layer.check(a)
@@ -368,7 +371,7 @@ def attack_audit_forgery() -> Result:
 
     # --- FORGE: rebuild the file dropping the damning entry, recomputing hashes.
     # This is exactly what an attacker with the write handle + hashlib does.
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         entries = [json.loads(line) for line in f if line.strip()]
     kept = [e for e in entries if "ATTACKER" not in e["reason"]]  # drop the crime
 
@@ -466,7 +469,6 @@ def attack_redaction_nested() -> Result:
         },
     )
     res = gate.dispatch(action, {"send_email": send_email})
-    blob = json.dumps(received)
     top_redacted = received.get("ssn") == "[REDACTED]"
     leaked_paths = []
     if isinstance(received.get("meta"), dict) and ssn in json.dumps(received["meta"]):
@@ -528,7 +530,7 @@ def attack_dos_amount_range() -> Result:
         nest_ms = (time.perf_counter() - t0) * 1000
         findings.append(f"5000-deep payload: check+audit={nest_ms:.0f}ms (no crash)")
         nest_crash = False
-    except RecursionError as e:
+    except RecursionError:
         nest_ms = (time.perf_counter() - t0) * 1000
         findings.append(f"5000-deep payload: RecursionError after {nest_ms:.0f}ms "
                         "(audit_chain _canonical_hash json.dumps recurses)")
@@ -616,7 +618,6 @@ def attack_replay_across_transform() -> Result:
     d1 = gate.enforce(mk())   # TRANSFORM (redacts ssn), commits nonce
     d2 = gate.enforce(mk())   # same nonce -> should be DENY (replay)
 
-    first_transform = d1.verdict is Verdict.TRANSFORM
     second_denied = d2.verdict is Verdict.DENY and "repl" in d2.reason.lower()
     escaped = not second_denied
     sev = "HIGH" if escaped else "NONE"
@@ -653,8 +654,7 @@ def attack_action_mutation() -> Result:
     # Try to reassign the frozen field.
     field_mutable = False
     try:
-        object.__setattr__  # available always; test dataclass frozen instead
-        a.tool = "x"  # type: ignore[misc]
+        a.tool = "x"  # type: ignore[misc]  # frozen dataclass must reject this
         field_mutable = True
     except Exception:
         field_mutable = False

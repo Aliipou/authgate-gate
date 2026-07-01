@@ -371,7 +371,9 @@ def test_forged_local_log_verifies_but_diverges_from_notary() -> None:
         notary_seq, notary_hash = c.head(chain)  # the externally-retained head
 
         # Forge: drop the damning record and recompute EVERY hash locally.
-        entries = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+        entries = [
+            json.loads(ln) for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()
+        ]
         kept = [e for e in entries if "ATTACKER" not in e["reason"]]
         prev = GENESIS_PREV_HASH
         forged = []

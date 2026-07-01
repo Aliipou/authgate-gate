@@ -60,7 +60,7 @@ class _Notary:
         self.thread: threading.Thread | None = None
         self.port = 0
 
-    def __enter__(self) -> "_Notary":
+    def __enter__(self) -> _Notary:
         led = NotaryLedger(self.ledger_path)
         self.server = NotaryServer(("127.0.0.1", 0), led, key=self.key)
         # Silence the per-connection traceback ThreadingTCPServer prints when a
@@ -87,7 +87,7 @@ class _Notary:
                     if not chunk:
                         break
                     buf += chunk
-            except socket.timeout:
+            except TimeoutError:
                 pass
             return buf
 
@@ -188,7 +188,6 @@ def attack_bool_seq_confusion() -> None:
         # The concern: monotonic compare uses True==1; a later legit seq=1
         # would now be REJECTED (seq 1 <= 1), or accepted incorrectly.
         legit1 = c.submit(chain, 1, "real_h1")
-        contained = legit1.get("ok") is False  # honest gate's real seq 1 is now blocked -> DoS?
         # Contained means "attack had no lasting effect". Here a bool seq that
         # BLOCKS the honest gate's real seq=1 is a DoS/desync -> ESCAPE.
         broke = (resp.get("ok") is True) and (legit1.get("ok") is False)
@@ -406,7 +405,6 @@ def attack_preempt_future_seq() -> None:
         r3 = c.submit("c", 3, "real3")
         r4 = c.submit("c", 4, "real4")
         r5 = c.submit("c", 5, "real5")  # rejected: 5 <= 5
-        notary_at5 = c.at("c", 5)
         head_seq, head_hash = c.head("c")
         # The notary now vouches for FORGED5 at seq 5 and REJECTS the honest
         # real5. An auditor comparing local head (real5) to notary head sees a
@@ -417,7 +415,6 @@ def attack_preempt_future_seq() -> None:
         # hash that never corresponds to any real entry, and seqs 3..4 are also
         # accepted out of order relative to the pre-empt.
         honest5_rejected = r5.get("ok") is False
-        notary_shows_forgery = notary_at5 == "FORGED5" and head_hash == "FORGED5"
         # Is this contained? The design's guarantee is only "append-only witness
         # + monotonic". A key-holder CAN pin future seqs. Whether that's a code
         # bug or inherent: the docstring says HMAC "does not authenticate the gate

@@ -45,6 +45,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from .action import Action
+from .normalize import normalize_token
 from .policy import Decision, Verdict
 
 
@@ -188,7 +189,15 @@ class RuntimeMonitor:
         and clobber one another, splitting the session's budget/step/nonce state
         across two objects. Double-checked so the common (already-exists) path
         stays lock-free.
+
+        The session_id is normalized with the SAME rule ``Action`` applies at
+        construction, so a caller passing a raw id (e.g. ``"B-1"``) and the
+        enforcement path passing an already-normalized ``action.session_id``
+        resolve to the *same* state (``normalize_token`` is idempotent). Without
+        this the two would key different dicts and a look-alike id would silently
+        fork a fresh session.
         """
+        session_id = normalize_token(session_id) or "default"
         st = self._sessions.get(session_id)
         if st is None:
             with self._lock:

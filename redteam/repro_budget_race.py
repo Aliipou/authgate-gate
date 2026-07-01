@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # shrink the switch interval so a short, deterministic-ish run hits it reliably
 # on any machine. Set ADV_DEFAULT_INTERVAL=1 to run at the stock 5ms interval.
 import os
+
 if os.environ.get("ADV_DEFAULT_INTERVAL") != "1":
     sys.setswitchinterval(0.000001)
 

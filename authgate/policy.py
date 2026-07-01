@@ -171,7 +171,7 @@ class PolicyEngine:
         #    depth — collecting the secret values; (b) scrub those values from
         #    anywhere else they were aliased or echoed. A shallow top-level
         #    name-match alone is bypassed by nesting/aliasing/echoing the secret.
-        for rule, patterns in zip(self._redactions, self._patterns):
+        for rule, patterns in zip(self._redactions, self._patterns, strict=True):
             if rule.get("action_purpose") != intent.action_purpose:
                 continue
             fields = {f for f in rule.get("redact_fields", [])}

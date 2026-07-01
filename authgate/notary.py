@@ -53,7 +53,7 @@ import socketserver
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 GENESIS_PREV_HASH = "0" * 64
 _ENV_KEY = "AUTHGATE_NOTARY_KEY"
@@ -65,16 +65,20 @@ _MAX_LINE = 64 * 1024
 _CONN_TIMEOUT = 10.0
 
 
-def _is_seq(value: Any) -> bool:
+def _is_seq(value: Any) -> TypeGuard[int]:
     """A valid seq is a *plain* int. ``bool`` is an int subclass in Python, so
     ``isinstance(x, int)`` would accept ``True``/``False`` — which then compare
-    as ``1``/``0`` and can pre-empt/poison a real integer seq. Reject it."""
+    as ``1``/``0`` and can pre-empt/poison a real integer seq. Reject it.
+
+    Typed as a ``TypeGuard[int]`` so callers that gate on it narrow ``seq`` from
+    ``Any``/``object`` to ``int`` for the type checker as well as at runtime.
+    """
     return type(value) is int
 
 
 def _mac(key: bytes, chain: str, seq: int, entry_hash: str) -> str:
     """Deterministic HMAC-SHA256 over a submission's identifying tuple."""
-    msg = f"{chain}\n{seq}\n{entry_hash}".encode("utf-8")
+    msg = f"{chain}\n{seq}\n{entry_hash}".encode()
     return hmac.new(key, msg, hashlib.sha256).hexdigest()
 
 
@@ -273,7 +277,9 @@ class NotaryServer(socketserver.ThreadingTCPServer):
 class NotaryClient:
     """Minimal synchronous client. One short-lived connection per call."""
 
-    def __init__(self, host: str, port: int, key: bytes | str | None = None, timeout: float = 5.0) -> None:
+    def __init__(
+        self, host: str, port: int, key: bytes | str | None = None, timeout: float = 5.0
+    ) -> None:
         self._addr = (host, port)
         self._key = _resolve_key(key)
         self._timeout = timeout
@@ -291,7 +297,9 @@ class NotaryClient:
 
     def submit(self, chain: str, seq: int, entry_hash: str) -> dict[str, Any]:
         mac = _mac(self._key, chain, seq, entry_hash)
-        return self._rpc({"op": "submit", "chain": chain, "seq": seq, "hash": entry_hash, "mac": mac})
+        return self._rpc(
+            {"op": "submit", "chain": chain, "seq": seq, "hash": entry_hash, "mac": mac}
+        )
 
     def head(self, chain: str) -> tuple[int, str]:
         r = self._rpc({"op": "head", "chain": chain})

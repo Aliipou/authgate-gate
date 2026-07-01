@@ -106,7 +106,7 @@ def test_verify_against_anchor_catches_in_process_forgery() -> None:
     anchor_seq, anchor_hash = retained[-1]
 
     # Forge: drop the damning record, recompute every hash (attacker has _canonical_hash).
-    entries = [__import__("json").loads(l) for l in _lines(path) if l.strip()]
+    entries = [__import__("json").loads(ln) for ln in _lines(path) if ln.strip()]
     kept = [e for e in entries if "ATTACKER" not in e["reason"]]
     prev = GENESIS_PREV_HASH
     forged = []
