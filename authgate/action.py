@@ -61,7 +61,13 @@ class Action:
         object.__setattr__(self, "tool", normalize_token(self.tool))
         object.__setattr__(self, "action_purpose", normalize_token(self.action_purpose))
         object.__setattr__(self, "data_labels", normalize_labels(self.data_labels))
-        object.__setattr__(self, "session_id", self.session_id.strip() or "default")
+        # session_id is a trust-boundary identifier like every other token: it
+        # keys the per-session budget/step/nonce/taint state. If it were only
+        # .strip()'d, a zero-width or look-alike variant would fork a *fresh*
+        # session with untouched ceilings (and a nonce spent in one session
+        # would replay in its twin). Normalize it so cosmetic variants collapse
+        # to the same key — the whole point of normalize.py.
+        object.__setattr__(self, "session_id", normalize_token(self.session_id) or "default")
         cap = normalize_token(self.capability) if self.capability else f"tool:{self.tool}"
         object.__setattr__(self, "capability", cap)
         # Make payload immutable so a later layer can't mutate a packet another

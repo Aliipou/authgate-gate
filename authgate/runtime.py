@@ -39,6 +39,7 @@ stdlib only.
 from __future__ import annotations
 
 import math
+import threading
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -126,6 +127,13 @@ class _SessionState:
     nonces_seen: set[str] = field(default_factory=set)
     # sensitive label -> the action_purpose it is bound to.
     label_purpose: dict[str, str] = field(default_factory=dict)
+    # Serializes the read-check-commit critical section for THIS session. The
+    # temporal guarantees (budget, step, replay) are only sound if the ceiling
+    # check and the commit that follows it are atomic against concurrent ALLOWs
+    # in the same session; without it, two ALLOWs read the same stale total and
+    # overwrite each other (lost update), so real spend runs past the ceiling.
+    # Held only per-session, so distinct sessions still check in parallel.
+    lock: threading.Lock = field(default_factory=threading.Lock, compare=False, repr=False)
 
 
 # --------------------------------------------------------------------------- #
@@ -149,6 +157,9 @@ class RuntimeMonitor:
         self._cost_fn = cost_fn or default_cost_fn
         self._sessions: dict[str, _SessionState] = {}
         self._stopped = False
+        # Guards the _sessions mapping *structure* (get-or-create). Distinct
+        # from each session's own .lock, which guards that session's contents.
+        self._lock = threading.Lock()
 
     # -- global kill-switch ------------------------------------------------- #
     def stop(self) -> None:
@@ -170,11 +181,21 @@ class RuntimeMonitor:
         return self._cost_fn(action)
 
     def state(self, session_id: str) -> _SessionState:
-        """Get (creating if needed) the mutable state for a session."""
+        """Get (creating if needed) the mutable state for a session.
+
+        Thread-safe get-or-create: without the lock, two concurrent first-touch
+        callers for the same session could each build a fresh ``_SessionState``
+        and clobber one another, splitting the session's budget/step/nonce state
+        across two objects. Double-checked so the common (already-exists) path
+        stays lock-free.
+        """
         st = self._sessions.get(session_id)
         if st is None:
-            st = _SessionState()
-            self._sessions[session_id] = st
+            with self._lock:
+                st = self._sessions.get(session_id)
+                if st is None:
+                    st = _SessionState()
+                    self._sessions[session_id] = st
         return st
 
 
@@ -220,6 +241,19 @@ class RuntimeLayer:
 
         st = self._monitor.state(action.session_id)
 
+        # Everything below reads this session's state, decides, and (on ALLOW)
+        # commits back. Those three steps MUST be atomic against other calls in
+        # the same session, or concurrent ALLOWs read the same stale totals and
+        # overwrite each other's commit — defeating the budget/step/replay
+        # ceilings. The lock is per-session, so other sessions still run in
+        # parallel; a DENY simply releases it without having mutated anything
+        # (commit-on-allow is preserved).
+        with st.lock:
+            return self._decide_and_commit(action, cfg, st)
+
+    def _decide_and_commit(
+        self, action: Action, cfg: RuntimeConfig, st: _SessionState
+    ) -> Decision:
         # 1. Replay. An empty nonce is allowed through but NOT recorded (a packet
         #    that opted out of replay protection cannot collide with another
         #    empty one). A non-empty nonce already seen in this session is a

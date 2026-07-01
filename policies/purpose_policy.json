@@ -10,7 +10,11 @@
   "redactions": [
     {
       "action_purpose": "support_reply",
-      "redact_fields": ["ssn", "card_number"]
+      "redact_fields": ["ssn", "card_number"],
+      "redact_patterns": [
+        "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "\\b(?:\\d[ -]?){13,16}\\b"
+      ]
     }
   ]
 }
