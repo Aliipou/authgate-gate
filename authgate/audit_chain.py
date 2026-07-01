@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -92,13 +93,35 @@ class HashChainedAudit:
     log raises rather than silently extending a broken chain.
     """
 
-    def __init__(self, path: str | Path) -> None:
+    def __init__(
+        self,
+        path: str | Path,
+        anchor: Callable[[int, str], None] | None = None,
+    ) -> None:
         self._path = Path(path)
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._last_hash: str = GENESIS_PREV_HASH
         self._next_seq: int = 0
+        # Optional EXTERNAL-ANCHOR sink (default off). Called with
+        # (seq, entry_hash) after each entry is durably written, so an operator
+        # can publish the chain head to an out-of-process trust root (a WORM
+        # bucket, a notary, a separate signer). This is the "external half" the
+        # module docstring promises: in-process verify() cannot catch a forger
+        # who rebuilt the whole file, but a head retained OUTSIDE this process
+        # can — see verify_against_anchor(). Defaults to None so existing
+        # behaviour and callers are completely unchanged.
+        self._anchor = anchor
         if self._path.exists():
             self._load_existing()
+
+    def head(self) -> tuple[int, str]:
+        """Return ``(last_seq, last_entry_hash)`` — the current chain head.
+
+        This is the single value an operator retains/publishes out of band to
+        get real tamper-*evidence* (not just in-process tamper-detection). For
+        an empty chain returns ``(-1, GENESIS_PREV_HASH)``.
+        """
+        return (self._next_seq - 1, self._last_hash)
 
     def _load_existing(self) -> None:
         """Resume an existing chain: validate it, then adopt its tail state.
@@ -152,7 +175,46 @@ class HashChainedAudit:
 
         self._last_hash = entry["entry_hash"]
         self._next_seq += 1
+
+        # Publish the new head to the external anchor, if any. Called AFTER the
+        # local write so the durable log is the source of truth; an anchor sink
+        # that raises is allowed to propagate (an opt-in operator wants their
+        # anchor to be fail-closed), and cannot leave the in-memory chain state
+        # inconsistent because it runs last.
+        if self._anchor is not None:
+            self._anchor(entry["seq"], entry["entry_hash"])
         return entry
+
+    def verify_against_anchor(
+        self, expected_hash: str, expected_seq: int | None = None
+    ) -> tuple[bool, str]:
+        """Verify the chain AND that its head matches an externally-retained one.
+
+        Plain :meth:`verify` cannot catch an in-process forger who rewrote the
+        whole file: they recompute every ``entry_hash`` too, so the chain is
+        internally consistent. But any TRUNCATION or REWRITE changes the *head*
+        hash. An auditor who kept the last known-good head out of band (via
+        :meth:`head` / the ``anchor`` sink) passes it here; a divergence is then
+        provable even though :meth:`verify` alone returns True. This is the piece
+        that actually closes in-process audit forgery — provided the anchor lives
+        somewhere the attacker cannot rewrite.
+        """
+        ok, reason = self.verify_detail()
+        if not ok:
+            return False, reason
+        last_seq, last_hash = self.head()
+        if last_hash != expected_hash:
+            return False, (
+                f"head hash diverges from anchor "
+                f"(local {last_hash[:12]}…, anchor {expected_hash[:12]}…) "
+                f"— truncation/rewrite past the anchored point"
+            )
+        if expected_seq is not None and last_seq != expected_seq:
+            return False, (
+                f"head seq diverges from anchor "
+                f"(local {last_seq}, anchor {expected_seq}) — entries dropped/added"
+            )
+        return True, "ok"
 
     def verify(self) -> bool:
         """Re-read the file and confirm the whole chain is intact.

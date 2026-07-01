@@ -75,6 +75,55 @@ def test_layer_and_verdict_recorded() -> None:
     assert log.verify() is True
 
 
+def test_head_tracks_last_entry() -> None:
+    path = _tmp_log()
+    log = HashChainedAudit(path)
+    assert log.head() == (-1, "0" * 64)  # empty chain
+    e0 = log.record(Action("a", "t", "p"), _allow())
+    assert log.head() == (0, e0["entry_hash"])
+    e1 = log.record(Action("a", "t", "p"), _allow())
+    assert log.head() == (1, e1["entry_hash"])
+
+
+def test_anchor_sink_receives_each_head() -> None:
+    seen: list[tuple[int, str]] = []
+    log = HashChainedAudit(_tmp_log(), anchor=lambda seq, h: seen.append((seq, h)))
+    e0 = log.record(Action("a", "t", "p"), _allow())
+    e1 = log.record(Action("a", "t", "p"), _allow())
+    assert seen == [(0, e0["entry_hash"]), (1, e1["entry_hash"])]
+
+
+def test_verify_against_anchor_catches_in_process_forgery() -> None:
+    # An in-process forger who rewrites the whole file passes verify() — but an
+    # externally-retained head detects the truncation.
+    from authgate.audit_chain import GENESIS_PREV_HASH, _canonical_hash
+
+    path = _tmp_log()
+    retained: list[tuple[int, str]] = []
+    log = HashChainedAudit(path, anchor=lambda seq, h: retained.append((seq, h)))
+    log.record(Action("a", "t", "p"), _allow("innocuous"))
+    log.record(Action("a", "t", "p"), _allow("WIRED $10M TO ATTACKER"))
+    anchor_seq, anchor_hash = retained[-1]
+
+    # Forge: drop the damning record, recompute every hash (attacker has _canonical_hash).
+    entries = [__import__("json").loads(l) for l in _lines(path) if l.strip()]
+    kept = [e for e in entries if "ATTACKER" not in e["reason"]]
+    prev = GENESIS_PREV_HASH
+    forged = []
+    for seq, e in enumerate(kept):
+        e = dict(e, seq=seq, prev_hash=prev)
+        e.pop("entry_hash", None)
+        e["entry_hash"] = _canonical_hash(e)
+        prev = e["entry_hash"]
+        forged.append(e)
+    path.write_text("".join(__import__("json").dumps(e) + "\n" for e in forged), encoding="utf-8")
+
+    reader = HashChainedAudit(path)
+    assert reader.verify() is True  # in-process forgery is internally consistent
+    ok, reason = reader.verify_against_anchor(anchor_hash, anchor_seq)
+    assert ok is False and "diverges" in reason  # ...but the retained head betrays it
+
+
 def _lines(path: pathlib.Path) -> list[str]:
     return path.read_text(encoding="utf-8").splitlines()
 
