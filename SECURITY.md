@@ -165,6 +165,26 @@ implemented in code; the rest are not.
 6. **Multiple witnesses / quorum** (remove the single-notary SPOF). *[not done]*
 7. **Transparency protocol** (gossip / public verifiability of the log). *[not done]*
 8. **Offline verification** (an auditor verifies against retained proofs without a live notary). *[not done]*
+9. **Hardware / remote root of trust** — the ceiling. Remote append-only / immutable
+   storage, a signing key in a **TPM/HSM** the process cannot extract, **Secure Boot**
+   + **remote attestation** of the notary host. Only this tier survives an attacker
+   who holds full OS-level control of the gate's *and* notary's machine. *[not done]*
+
+### Honest integrity grade
+
+Audit-log integrity, graded strictly:
+
+| | Against an **out-of-process** attacker | Against an **in-process / full-machine** attacker |
+|---|---|---|
+| Hash chain alone (before) | detected | **defeated** (forger recomputes the chain) |
+| + external anchor + independent notary (now) | detected | detected **iff** the notary is in a trust domain the attacker cannot reach |
+
+This raises audit integrity from roughly **7/10 to ~8–8.5/10**. It does **not** reach
+9.5+: if the notary runs as the same OS user on the same host, `kill notary; forge
+gate` still wins. Closing that gap is stage 9 — a hardware/remote root of trust,
+which is out of scope for a stdlib library and belongs to the deployment. This
+change makes the security *model* more correct; it does not make the system
+impenetrable, and must not be described as a complete fix.
 
 ## 5. Running the notary and wiring an anchor
 
