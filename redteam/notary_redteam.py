@@ -29,7 +29,7 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
-from authgate.notary import (  # noqa: E402
+from authgate_gate.notary import (  # noqa: E402
     NotaryClient,
     NotaryLedger,
     NotaryServer,

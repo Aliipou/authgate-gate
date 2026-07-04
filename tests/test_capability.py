@@ -10,8 +10,8 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from authgate import Action, Verdict
-from authgate.capability import CapabilityLayer, CapabilityRegistry
+from authgate_gate import Action, Verdict
+from authgate_gate.capability import CapabilityLayer, CapabilityRegistry
 
 
 def _layer(registry: CapabilityRegistry) -> CapabilityLayer:

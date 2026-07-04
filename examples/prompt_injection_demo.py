@@ -16,7 +16,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 from agent.agent import planned_intents
-from authgate import AuditLog, AuthGate, PolicyEngine, Verdict
+from authgate_gate import AuditLog, AuthGate, PolicyEngine, Verdict
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 

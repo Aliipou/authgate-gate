@@ -41,22 +41,22 @@ _ROOT = os.path.dirname(_HERE)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from authgate.action import ABI_VERSION, Action, RiskVector  # noqa: E402
-from authgate.adapter import (  # noqa: E402
+from authgate_gate.action import ABI_VERSION, Action, RiskVector  # noqa: E402
+from authgate_gate.adapter import (  # noqa: E402
     AIToolAdapter,
     FinanceAdapter,
     QuantumJobAdapter,
 )
-from authgate.audit_chain import HashChainedAudit  # noqa: E402
-from authgate.capability import (  # noqa: E402
+from authgate_gate.audit_chain import HashChainedAudit  # noqa: E402
+from authgate_gate.capability import (  # noqa: E402
     WILDCARD,
     CapabilityLayer,
     CapabilityRegistry,
 )
-from authgate.intent import Intent  # noqa: E402
-from authgate.normalize import normalize_labels, normalize_token  # noqa: E402
-from authgate.policy import PolicyEngine, Verdict  # noqa: E402
-from authgate.runtime import (  # noqa: E402
+from authgate_gate.intent import Intent  # noqa: E402
+from authgate_gate.normalize import normalize_labels, normalize_token  # noqa: E402
+from authgate_gate.policy import PolicyEngine, Verdict  # noqa: E402
+from authgate_gate.runtime import (  # noqa: E402
     RuntimeConfig,
     RuntimeLayer,
     RuntimeMonitor,

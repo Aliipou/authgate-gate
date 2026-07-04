@@ -18,16 +18,16 @@ import threading
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from authgate.action import Action
-from authgate.audit_chain import GENESIS_PREV_HASH, HashChainedAudit, _canonical_hash
-from authgate.notary import (
+from authgate_gate.action import Action
+from authgate_gate.audit_chain import GENESIS_PREV_HASH, HashChainedAudit, _canonical_hash
+from authgate_gate.notary import (
     NotaryClient,
     NotaryLedger,
     NotaryServer,
     _mac,
     make_anchor,
 )
-from authgate.policy import Decision, Verdict
+from authgate_gate.policy import Decision, Verdict
 
 _KEY = "shared-test-key-0123456789"
 

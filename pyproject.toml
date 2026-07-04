@@ -35,7 +35,7 @@ Repository = "https://github.com/Aliipou/authgate-gate"
 dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8.0"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["authgate"]
+packages = ["authgate_gate"]
 
 [tool.ruff]
 line-length = 100

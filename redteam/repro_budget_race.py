@@ -30,9 +30,9 @@ import os
 if os.environ.get("ADV_DEFAULT_INTERVAL") != "1":
     sys.setswitchinterval(0.000001)
 
-from authgate.action import Action
-from authgate.policy import Verdict
-from authgate.runtime import RuntimeConfig, RuntimeLayer, RuntimeMonitor
+from authgate_gate.action import Action
+from authgate_gate.policy import Verdict
+from authgate_gate.runtime import RuntimeConfig, RuntimeLayer, RuntimeMonitor
 
 CEILING = 100.0
 N_THREADS = 300

@@ -10,8 +10,8 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from authgate.action import Action, RiskVector
-from authgate.adapter import AIToolAdapter, FinanceAdapter, QuantumJobAdapter
+from authgate_gate.action import Action, RiskVector
+from authgate_gate.adapter import AIToolAdapter, FinanceAdapter, QuantumJobAdapter
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +254,7 @@ def test_adapter_names() -> None:
 
 
 def test_protocol_conformance() -> None:
-    from authgate.action import DomainAdapter
+    from authgate_gate.action import DomainAdapter
 
     for ad in (AIToolAdapter(), FinanceAdapter(), QuantumJobAdapter()):
         assert isinstance(ad, DomainAdapter)

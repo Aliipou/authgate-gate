@@ -8,7 +8,7 @@ import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from authgate import AuditLog, AuthGate, Intent, PolicyEngine, Verdict
+from authgate_gate import AuditLog, AuthGate, Intent, PolicyEngine, Verdict
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 

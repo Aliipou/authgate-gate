@@ -34,16 +34,16 @@ try:
 except Exception:
     pass
 
-from authgate.action import Action  # noqa: E402
-from authgate.audit_chain import (  # noqa: E402
+from authgate_gate.action import Action  # noqa: E402
+from authgate_gate.audit_chain import (  # noqa: E402
     GENESIS_PREV_HASH,
     HashChainedAudit,
     _canonical_hash,
 )
-from authgate.capability import CapabilityLayer, CapabilityRegistry  # noqa: E402
-from authgate.controlled_gate import build_gate  # noqa: E402
-from authgate.policy import Verdict  # noqa: E402
-from authgate.runtime import RuntimeConfig, RuntimeLayer, RuntimeMonitor  # noqa: E402
+from authgate_gate.capability import CapabilityLayer, CapabilityRegistry  # noqa: E402
+from authgate_gate.controlled_gate import build_gate  # noqa: E402
+from authgate_gate.policy import Verdict  # noqa: E402
+from authgate_gate.runtime import RuntimeConfig, RuntimeLayer, RuntimeMonitor  # noqa: E402
 
 # Provoke thread preemption inside pure-Python critical sections: shrink the GIL
 # switch interval so CPython context-switches far more aggressively than the
@@ -558,7 +558,7 @@ def attack_adapter_crashes() -> Result:
     """Feed malicious/malformed raw events into each adapter. A clean adapter
     should raise a tidy error or produce a safe Action — never crash the whole
     pipeline with an unexpected exception type, and never under-scope caps."""
-    from authgate.adapter import AIToolAdapter, FinanceAdapter, QuantumJobAdapter
+    from authgate_gate.adapter import AIToolAdapter, FinanceAdapter, QuantumJobAdapter
 
     findings = []
     escaped = False

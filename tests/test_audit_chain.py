@@ -11,10 +11,10 @@ import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from authgate.action import Action
-from authgate.audit_chain import HashChainedAudit
-from authgate.intent import Intent
-from authgate.policy import Decision, Verdict
+from authgate_gate.action import Action
+from authgate_gate.audit_chain import HashChainedAudit
+from authgate_gate.intent import Intent
+from authgate_gate.policy import Decision, Verdict
 
 
 def _tmp_log() -> pathlib.Path:
@@ -96,7 +96,7 @@ def test_anchor_sink_receives_each_head() -> None:
 def test_verify_against_anchor_catches_in_process_forgery() -> None:
     # An in-process forger who rewrites the whole file passes verify() — but an
     # externally-retained head detects the truncation.
-    from authgate.audit_chain import GENESIS_PREV_HASH, _canonical_hash
+    from authgate_gate.audit_chain import GENESIS_PREV_HASH, _canonical_hash
 
     path = _tmp_log()
     retained: list[tuple[int, str]] = []
