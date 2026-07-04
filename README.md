@@ -10,6 +10,14 @@ ordered checks — **capability → purpose-binding → runtime/drift** — deci
 > for *that purpose*, be used for *this action*?" The runtime layer asks the one
 > a per-call gate can't: "is the session's behavior *over time* still valid?"
 
+> **Legitimacy ⊥ Authority — this repo is the *authority* side.** AuthGate answers
+> "does this actor hold the capability?" A separate, upstream *legitimacy* gate
+> (the FDK / `freedom-policy` role) answers "should this happen at all?" and may
+> only **DENY**. **Invariant:** legitimacy never grants authority; AuthGate never
+> overrides a legitimacy denial. The two compose through a JSON seam
+> (`fdk_kernel.authgate_bridge`), not shared code — a proposed architecture, not a
+> proven paradigm.
+
 **North star: correctness = containment, not truth.** The goal is to fail safe
 under a present attacker, not to be philosophically correct. Every layer converts
 internal errors to `DENY`; nothing is trusted to be well-formed.
