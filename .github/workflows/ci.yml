@@ -8,25 +8,31 @@ on: [push, pull_request]
 jobs:
   quality:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "${{ matrix.python-version }}"
       - name: Install (editable, with dev tools)
         run: python -m pip install -e ".[dev]"
 
       - name: Lint (ruff)
-        run: ruff check authgate tests redteam boundaries
+        run: ruff check authgate_gate tests redteam boundaries
 
       - name: Types (mypy)
-        run: mypy authgate
+        run: mypy authgate_gate
 
       - name: Tests (pytest)
         run: pytest -q
+        env:
+          AUTHGATE_BACKEND: python
 
       - name: Architecture boundaries
-        run: python boundaries/check_boundaries.py authgate --policy boundaries/policy.json
+        run: python boundaries/check_boundaries.py authgate_gate --policy boundaries/policy.json
 
       - name: Red team — components
         run: python redteam/red_team_components.py
