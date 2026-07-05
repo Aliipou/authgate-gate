@@ -13,10 +13,13 @@ ordered checks — **capability → purpose-binding → runtime/drift** — deci
 > **Legitimacy ⊥ Authority — this repo is the *authority* side.** AuthGate answers
 > "does this actor hold the capability?" A separate, upstream *legitimacy* gate
 > (the FDK / `freedom-policy` role) answers "should this happen at all?" and may
-> only **DENY**. **Invariant:** legitimacy never grants authority; AuthGate never
-> overrides a legitimacy denial. The two compose through a JSON seam
-> (`fdk_kernel.authgate_bridge`), not shared code — a proposed architecture, not a
-> proven paradigm.
+> only **DENY**. **Pipeline order (canonical, locked):** identity admission → FDK
+> legitimacy (DENY-only) → **AuthGate authority (grant within legitimacy, here)** →
+> PEP execute + audit — legitimacy first, then authority. **Invariant:** legitimacy
+> may only DENY; authority never overrides a legitimacy denial. The two compose
+> through a JSON seam (`fdk_kernel.authgate_bridge`), not shared code — a proposed
+> architecture, not a proven paradigm. (On the theoretical lineage of *both* layers,
+> see "Origin & philosophy" at the end — kept out of the engineering scope here.)
 
 **North star: correctness = containment, not truth.** The goal is to fail safe
 under a present attacker, not to be philosophically correct. Every layer converts
@@ -158,6 +161,26 @@ tampering, fail-closed fuzzing). Override depth with `REDTEAM_ATTEMPTS=1000`.
 Economic modeling, governance/philosophy layers, blockchain, FDK/ML inside the
 runtime decision, model-based decisions in the gate. Each is how this project
 would die early; they come later, behind a hard interface, or never.
+
+## Origin & philosophy (out of scope)
+
+*This section is lineage, not a claim about the code. Nothing here is required to
+evaluate or run the gate; the engineering above stands on its own.*
+
+This gate is the **authority** half of a two-layer system derived from a normative
+theory (نظریه آزادی, *Theory of Freedom*). The full system is **Legitimacy ⊥
+Authority**: an upstream *legitimacy* layer (FDK — ownership / consent / verifier)
+and this *authority* layer (delegated machine property rights, tool-permission,
+runtime enforcement). **Both layers are the theory made executable** — the authority
+side is not neutral plumbing bolted onto a philosophy; it is equally part of it.
+The canonical pipeline is **legitimacy first, then authority**, and legitimacy may
+only DENY.
+
+The theory's claim to *philosophical independence* from existing frameworks (Nozick /
+Pettit / Sen) was **not previously demonstrated and is now REOPENED under new
+evidence** — undetermined, under active evaluation, neither closed nor proven. Any
+claim of scientific superiority over RLHF / Constitutional AI / OPA / NIST stays
+explicitly **UNPROVEN**. None of that bears on this repo's containment guarantees.
 
 ## License
 
