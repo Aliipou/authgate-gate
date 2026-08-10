@@ -25,6 +25,41 @@ ordered checks — **capability → purpose-binding → runtime/drift** — deci
 under a present attacker, not to be philosophically correct. Every layer converts
 internal errors to `DENY`; nothing is trusted to be well-formed.
 
+## Status — 2026-08-10: a red team broke this, and one README claim above is false
+
+`redteam/test_round3.py` contains 31 exploits. A passing `test_ESCAPE_*` asserts the
+**attacker's** success, so a green run is the proof of the break. The 103 pre-existing
+tests still pass. Two findings are critical and were reproduced by hand:
+
+**1. `capability` and `tool` are never compared.** `CapabilityLayer.check` authorizes
+`action.capability`; dispatch selects the executor with `effective.tool`. Both are
+fields of the same attacker-authored packet, and no layer relates them. A grant of
+`tool:read_file` executes `wire_transfer`. `map_capabilities` — the ABI derivation that
+would bind the two — is defined in every adapter and **called from no enforcement
+path**.
+
+> Therefore the line above, *"Authorization asks: is this actor allowed to call this
+> tool?"*, is **not true as implemented**. It asks whether the actor holds the
+> capability the packet *claims* to need. That correction stays here until the code
+> earns the sentence back.
+
+**2. Every temporal ceiling keys on `session_id`, which the agent authors.** Budget
+$100, `max_steps` 2 — rotating the session id allowed 20 of 20 calls at $50 each, and
+the monitor reported every session as compliant. Fully reachable through the shipped
+`AIToolAdapter`.
+
+Both have the same shape, and it is the shape that matters: **the packet the attacker
+authors also chooses which authority is consulted.** Authority is raised by a data
+field rather than by `grant()` — a direct falsification of the No-Amplification
+principle this stack rests on, not a bug in how any single check is computed.
+
+Also open: the audit chain records a full-stack PERMIT for an action the gate DENIED
+when the notary is unreachable; redaction misses non-`str` carriers and dict keys;
+un-normalized policy strings fail **open** in two places; only the first redaction rule
+per purpose runs; tail truncation passes `verify()` with no forgery at all.
+
+None of these is fixed yet. Recording a finding before fixing it is deliberate here.
+
 ### What this is — and is not
 
 It **is** a stdlib-only Python **policy decision point (PDP)** with two genuine
