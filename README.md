@@ -1,5 +1,7 @@
 # AuthGate — a governance gate for autonomous-agent tool calls
 
+**Live (graph):** [https://ali-authgate-gate.vercel.app](https://ali-authgate-gate.vercel.app)
+
 A small, **deterministic, fail-closed** gate that sits between an autonomous agent
 and its tools. For every tool call the agent wants to make, the gate runs three
 ordered checks — **capability → purpose-binding → runtime/drift** — decides
