@@ -20,8 +20,9 @@ ordered checks — **capability → purpose-binding → runtime/drift** — deci
 > PEP execute + audit — legitimacy first, then authority. **Invariant:** legitimacy
 > may only DENY; authority never overrides a legitimacy denial. The two compose
 > through a JSON seam (`fdk_kernel.authgate_bridge`), not shared code — a proposed
-> architecture, not a proven paradigm. (On the theoretical lineage of *both* layers,
-> see "Origin & philosophy" at the end — kept out of the engineering scope here.)
+> architecture, not a proven paradigm. Constitution:
+> [Aliipou/freedom-theory](https://github.com/Aliipou/freedom-theory)
+> (book + philosopher edition). This repo is authority, not the moral floor.
 
 **North star: correctness = containment, not truth.** The goal is to fail safe
 under a present attacker, not to be philosophically correct. Every layer converts
@@ -205,7 +206,8 @@ would die early; they come later, behind a hard interface, or never.
 evaluate or run the gate; the engineering above stands on its own.*
 
 This gate is the **authority** half of a two-layer system derived from a normative
-theory (نظریه آزادی, *Theory of Freedom*). The full system is **Legitimacy ⊥
+theory (نظریه آزادی, *Theory of Freedom* —
+[Aliipou/freedom-theory](https://github.com/Aliipou/freedom-theory)). The full system is **Legitimacy ⊥
 Authority**: an upstream *legitimacy* layer (FDK — ownership / consent / verifier)
 and this *authority* layer (delegated machine property rights, tool-permission,
 runtime enforcement). **Both layers are the theory made executable** — the authority
